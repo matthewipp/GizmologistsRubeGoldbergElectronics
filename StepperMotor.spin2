@@ -4,14 +4,26 @@
 CON
   CLOCKWISE = 1
   COUNTER_CLOCKWISE = 0
+  steps = 200
+  pin = 16
 
 VAR
-  long  symbol
+
 
 OBJ
 
 
-PUB step_amount()
+PUB step_amount(steps, pin)
+    repeat steps
+      use_pin(pin)
+      PINWRITE(pin, 1)
+      WAITMS(500)
+      PINWRITE(pin, 0)
+      WAITMS(500)
+PUB use_pin(pin)
+    PINSTART(pin, 1, 0, 0)
+
+
 
 
 PRI
