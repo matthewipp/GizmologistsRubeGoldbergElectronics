@@ -1,0 +1,31 @@
+{Testing and Example File}
+
+
+CON
+  _clkfreq = 180_000_000
+  CONSTANT_NAME = 0
+
+VAR
+
+
+OBJ
+
+
+PUB unique_name()
+  COGINIT(16, @start_loop, 0)
+  repeat
+    PINWRITE(23, 1)
+    WAITMS(500)
+    PINWRITE(23, 0)
+    WAITMS(500)
+
+
+DAT    ORG
+start_loop    DIRH      #17
+loop          OUTH      #17
+              WAITX     .led_wait
+              OUTL      #17
+              WAITX     .led_wait
+              JMP       @loop
+DAT
+.led_wait     long      90_000_000
