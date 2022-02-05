@@ -1,16 +1,18 @@
-{Object_Title_and_Purpose}
+{Stepper Motor}
 
 
 CON
   CONSTANT_NAME = 0
+  CLOCKWISE = 1
+  COUNTER_CLOCKWISE = 0
 
 VAR
   long  symbol
 
 OBJ
-  nickname      : "object_name"
 
-PUB public_method_name()
+
+PUB step_amount()
 
 
 PRI private_method_name()
