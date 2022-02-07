@@ -1,0 +1,29 @@
+{ WS2812B/WS2815 LED Methods }
+
+
+CON
+
+
+VAR
+  byte pin
+  long amount
+  byte color
+  long pointer
+
+' Initializes led_amount pins on pin pin_number
+PUB init_leds(pin_number, led_amount)
+  pin := pin_number
+  amount := led_amount
+  pointer := malloc(8)
+  return
+
+' Resets the leds on this pin and deletes the array
+' Leds must be initialized again after calling this method to use them
+PUB reset_leds()
+
+
+PRI private_method_name()
+
+
+DAT
+
