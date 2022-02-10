@@ -4,7 +4,7 @@
 CON
 
 VAR
-  long steps
+  long stepmultiplier
   byte step_pin
   byte dir_pin
   byte clockwise
@@ -14,24 +14,26 @@ OBJ
 
 
 PUB step_amount(mode_steps, speed, direction)
-    repeat mode_steps
+    repeat mode_steps * stepmultiplier
       if direction == 1
         PINWRITE(dir_pin, clockwise)
       if direction == 0
         PINWRITE(dir_pin, counterclockwise)
       PINWRITE(step_pin, 1)
-      WAITMS(speed)
+      WAITUS(speed / stepmultiplier)
       PINWRITE(step_pin, 0)
-      WAITMS(speed)
-
+      WAITUS(speed / stepmultiplier)
+ ' increase delay will make it slower and decrease delay will make it faster
 PUB init_stepperMotor(pin1, pin2, numsteps, cw, ccw)
     step_pin := pin1
     dir_pin := pin2
-    steps := numsteps
+    stepmultiplier := numsteps
     PINSTART(step_pin, 1, 0, 0)
     PINSTART(dir_pin, 1, 0, 0)
     clockwise := cw
     counterclockwise := ccw
+
+
 
 
 DAT

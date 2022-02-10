@@ -14,10 +14,11 @@ OBJ
 
 
 PUB test_stepmotor()
-    stepper_motor.init_stepperMotor(16, 17, 200, 1, 0)
+    stepper_motor.init_stepperMotor(16, 17, 4, 1, 0)
     repeat
-      stepper_motor.step_amount(300, 10, 1)
-      stepper_motor.step_amount(300, 10, 0)
+      stepper_motor.step_amount(200, 10000, 1)
+      stepper_motor.step_amount(200, 10000, 0)
+
 
 DAT    ORG
 start_loop    DIRH      #17
