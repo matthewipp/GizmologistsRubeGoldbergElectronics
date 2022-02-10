@@ -2,32 +2,36 @@
 
 
 CON
-  CLOCKWISE = 1
-  COUNTER_CLOCKWISE = 0
-  steps = 200
-  pin = 16
 
 VAR
-
+  long steps
+  byte step_pin
+  byte dir_pin
+  byte clockwise
+  byte counterclockwise
 
 OBJ
 
 
-PUB step_amount(steps, pin)
-    repeat steps
-      use_pin(pin)
-      PINWRITE(pin, 1)
-      WAITMS(500)
-      PINWRITE(pin, 0)
-      WAITMS(500)
-PUB use_pin(pin)
-    PINSTART(pin, 1, 0, 0)
+PUB step_amount(mode_steps, speed, direction)
+    repeat mode_steps
+      if direction == 1
+        PINWRITE(dir_pin, clockwise)
+      if direction == 0
+        PINWRITE(dir_pin, counterclockwise)
+      PINWRITE(step_pin, 1)
+      WAITMS(speed)
+      PINWRITE(step_pin, 0)
+      WAITMS(speed)
 
-
-
-
-PRI
+PUB init_stepperMotor(pin1, pin2, numsteps, cw, ccw)
+    step_pin := pin1
+    dir_pin := pin2
+    steps := numsteps
+    PINSTART(step_pin, 1, 0, 0)
+    PINSTART(dir_pin, 1, 0, 0)
+    clockwise := cw
+    counterclockwise := ccw
 
 
 DAT
-

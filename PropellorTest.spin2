@@ -9,16 +9,15 @@ VAR
 
 
 OBJ
+    stepper_motor : "StepperMotor"
 
 
-PUB unique_name()
-  COGINIT(16, @start_loop, 0)
-  repeat
-    PINWRITE(23, 1)
-    WAITMS(500)
-    PINWRITE(23, 0)
-    WAITMS(500)
 
+PUB test_stepmotor()
+    stepper_motor.init_stepperMotor(16, 17, 200, 1, 0)
+    repeat
+      stepper_motor.step_amount(300, 10, 1)
+      stepper_motor.step_amount(300, 10, 0)
 
 DAT    ORG
 start_loop    DIRH      #17
