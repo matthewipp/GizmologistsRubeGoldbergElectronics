@@ -7,23 +7,53 @@ CON
 VAR
   byte pin
   long amount
-  byte color
-  long pointer
+  long data_loc
 
 ' Initializes led_amount pins on pin pin_number
-PUB init_leds(pin_number, led_amount)
+PUB init_leds(pin_number, led_amount, led_data_loc)
   pin := pin_number
   amount := led_amount
-  pointer := malloc(8)
+  data_loc := led_data_loc
+  init_led_pins(pin_number)
   return
 
-' Resets the leds on this pin and deletes the array
-' Leds must be initialized again after calling this method to use them
-PUB reset_leds()
-
-
-PRI private_method_name()
+' Resets the leds on this pin
+PUB reset_leds() | leds, i
+  leds := long[data_loc]
+  repeat i from 0 to amount-1
+    leds[i] := 0
+  leds[amount-1] := 4278190080 '0xFF000000
+  write_to_leds(pin, data_loc)
 
 
 DAT
 
+
+DAT     ORG
+
+init_led_pins           DIRH    pa                      'Set direction of pin high
+                        OUTL    pa                      'Set pin output low
+                        RET
+
+write_to_leds           MOV     ptrb, #pb               'Move first value of color array to ptrb
+                        AND     ptrb, ff_constant       'And value with 0xFF000000 bit mask
+                        TJNZ    ptrb, @end_write        'End method if first 8 bits not 0
+                        TEST    ptrb, #1                'See if last bit is 1
+                        OUTH    pa                      'Set pin high
+              IF_Z      WAITX   zero_wait               'Wait short time if bit is zero
+              IF_NZ     WAITX   one_wait                'Wait long tim if bit is one
+                        OUTL    pa                      'Set pin low
+              IF_Z      WAITX   zero_wait2              'Wait long time if pin is zero
+              IF_NZ     WAITX   one_wait2               'Wait short time if pin is one
+                                                        'Call method again for next led
+
+
+
+end_write               RET
+
+
+ff_constant   long      4278190080
+zero_wait     long      100
+zero_wait2    long      150
+one_wait      long      200
+one_wait2     long      250
