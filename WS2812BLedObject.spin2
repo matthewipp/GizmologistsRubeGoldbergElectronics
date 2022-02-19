@@ -50,8 +50,7 @@ write_bit               ROL     ptrb, #1                'Rotate left once to get
                         DJZ     ptra, @test_if_last     'Decrement counter and jump to next led if 0
                         JMP     @write_bit
 
-test_if_last            MOV     ptrb, #pb               'Move first value of color array to ptrb
-                        AND     ptrb, ff_constant       'And value with 0xFF000000 bit mask
+test_if_last            AND     ptrb, ff_constant       'And value with 0xFF000000 bit mask
                         TJNZ    ptrb, @end_write        'End method if first 8 bits not 0
                         ADD     pb, #1
                         JMP     @write_to_leds
