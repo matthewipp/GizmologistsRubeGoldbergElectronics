@@ -35,9 +35,11 @@ init_led_pins           DIRH    pa                      'Set direction of pin hi
                         OUTL    pa                      'Set pin output low
                         RET
 
-write_to_leds           MOV     ptrb, #pb               'Move first value of color array to ptrb
-                        AND     ptrb, ff_constant       'And value with 0xFF000000 bit mask
-                        TJNZ    ptrb, @end_write        'End method if first 8 bits not 0
+write_to_leds           RDLONG  ptrb, pb                'Move first value of array pointer to ptrb
+                        MOV     ptra, #24               'Init counter to 24
+                        ROL     ptra, #8                'Rotate left eight times to align MSB
+
+write_bit               ROL     ptrb, #1                'Rotate left once to get next bit
                         TEST    ptrb, #1                'See if last bit is 1
                         OUTH    pa                      'Set pin high
               IF_Z      WAITX   zero_wait               'Wait short time if bit is zero
@@ -45,15 +47,21 @@ write_to_leds           MOV     ptrb, #pb               'Move first value of col
                         OUTL    pa                      'Set pin low
               IF_Z      WAITX   zero_wait2              'Wait long time if pin is zero
               IF_NZ     WAITX   one_wait2               'Wait short time if pin is one
-                                                        'Call method again for next led
+                        DJZ     ptra, @test_if_last     'Decrement counter and jump to next led if 0
+                        JMP     @write_bit
 
-
+test_if_last            MOV     ptrb, #pb               'Move first value of color array to ptrb
+                        AND     ptrb, ff_constant       'And value with 0xFF000000 bit mask
+                        TJNZ    ptrb, @end_write        'End method if first 8 bits not 0
+                        ADD     pb, #1
+                        JMP     @write_to_leds
 
 end_write               RET
 
 
 ff_constant   long      4278190080
-zero_wait     long      100
-zero_wait2    long      150
-one_wait      long      200
-one_wait2     long      250
+'All wait times account for extra 2 seconds of WAITX
+zero_wait     long      70
+zero_wait2    long      151
+one_wait      long      142
+one_wait2     long      79
