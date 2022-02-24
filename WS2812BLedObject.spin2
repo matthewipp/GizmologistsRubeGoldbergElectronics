@@ -15,6 +15,7 @@ PUB init_leds(pin_number, led_amount, led_data_loc)
   amount := led_amount
   data_loc := led_data_loc
   init_led_pins(pin_number)
+  reset_leds()
   return
 
 ' Resets the leds on this pin
@@ -24,6 +25,9 @@ PUB reset_leds() | leds, i
     leds[i] := 0
   leds[amount-1] := 4278190080 '0xFF000000
   write_to_leds(pin, data_loc)
+
+PUB set_rgb(index, red, green, blue) | leds
+  value := long[data_loc + 4*i]
 
 
 DAT
@@ -52,7 +56,7 @@ write_bit               ROL     ptrb, #1                'Rotate left once to get
 
 test_if_last            AND     ptrb, ff_constant       'And value with 0xFF000000 bit mask
                         TJNZ    ptrb, @end_write        'End method if first 8 bits not 0
-                        ADD     pb, #1
+                        ADD     pb, #4
                         JMP     @write_to_leds
 
 end_write               RET
