@@ -26,11 +26,8 @@ PUB reset_leds() | leds, i
   leds[amount-1] := 4278190080 '0xFF000000
   write_to_leds(pin, data_loc)
 
-PUB set_rgb(index, red, green, blue) | leds
-  value := long[data_loc + 4*i]
-
-PUB change_colors()
-
+PUB set_rgb(index, red, green, blue) | value
+  value := long[data_loc + 4*index]
 
 
 DAT

@@ -6,7 +6,9 @@ CON
   TEST_LED_AMOUNT = 5
 
 VAR
-
+    long red
+    long green
+    long blue
 
 OBJ
     stepper_motor : "StepperMotor"
@@ -24,9 +26,19 @@ PUB test_stepmotor()
 
 PUB test_ws2812b_leds()
   leds.init_leds(56, TEST_LED_AMOUNT, @leds_test)
+  change_colors()
 
-PUB test_colors()
-  leds.change_colors()
+PUB change_colors()| i
+  red := 0
+  green := 0
+  blue := 0
+  repeat 255
+    repeat i from 0 to TEST_LED_AMOUNT - 1
+      WAITMS(20)
+      leds[i].set_rgb(i, red, green, blue)
+      red := red + 1
+      green := green + 1
+      blue := blue + 1
 
 DAT    ORG
 start_loop    DIRH      #17
