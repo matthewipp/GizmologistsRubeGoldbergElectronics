@@ -29,6 +29,9 @@ PUB reset_leds() | leds, i
 PUB set_rgb(index, red, green, blue) | leds
   value := long[data_loc + 4*i]
 
+PUB change_colors()
+
+
 
 DAT
 
