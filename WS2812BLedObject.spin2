@@ -28,10 +28,7 @@ PUB reset_leds() | leds, i
 
 PUB set_rgb(index, red, green, blue) | value
   value := long[data_loc + 4*index]
-  value := value | (green << 16) | (red << 8) | (blue << 8)
-  org
-  WRLONG value, data_loc
-  end
+  value := (value & $FF000000) | (green << 16) | (red << 8) | blue
   return
 
 DAT
@@ -63,7 +60,8 @@ test_if_last            AND     ptrb, ff_constant       'And value with 0xFF0000
                         ADD     pb, #4
                         JMP     @write_to_leds
 
-end_write               RET
+end_write               WAITX   reset_wait
+                        RET
 
 
 ff_constant   long      4278190080
@@ -72,3 +70,4 @@ zero_wait     long      70
 zero_wait2    long      151
 one_wait      long      142
 one_wait2     long      79
+reset_wait    long      9000
