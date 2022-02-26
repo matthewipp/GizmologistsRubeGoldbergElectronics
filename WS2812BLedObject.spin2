@@ -14,7 +14,7 @@ PUB init_leds(pin_number, led_amount, led_data_loc)
   pin := pin_number
   amount := led_amount
   data_loc := led_data_loc
-  init_led_pins(pin_number)
+  init_led_pins(pin_number, 56)
   reset_leds()
   return
 
@@ -38,6 +38,9 @@ DAT     ORG
 
 init_led_pins           DIRH    pa                      'Set direction of pin high
                         OUTL    pa                      'Set pin output low
+                        DIRH    #17
+
+                        OUTH    #17
                         RET
 
 write_to_leds           RDLONG  ptrb, pb                'Move first value of array pointer to ptrb
@@ -63,6 +66,8 @@ test_if_last            AND     ptrb, ff_constant       'And value with 0xFF0000
 end_write               WAITX   reset_wait
                         RET
 
+save_rgb_value          WRLONG  pa, pb
+
 
 ff_constant   long      4278190080
 'All wait times account for extra 2 seconds of WAITX
@@ -71,3 +76,4 @@ zero_wait2    long      151
 one_wait      long      142
 one_wait2     long      79
 reset_wait    long      9000
+one_second    long      180_000_000

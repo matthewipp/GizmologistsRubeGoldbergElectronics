@@ -16,7 +16,8 @@ OBJ
 
 
 PUB start_test()
-  test_ws2812b_leds()
+  'test_ws2812b_leds()
+  coginit(16, @start_loop)
 
 PUB test_stepmotor()
   stepper_motor.init_stepperMotor(16, 17, 4, 1, 0)
@@ -25,7 +26,7 @@ PUB test_stepmotor()
     stepper_motor.step_amount(200, 10000, 0)
 
 PUB test_ws2812b_leds()
-  leds.init_leds(56, TEST_LED_AMOUNT, @leds_test)
+  leds.init_leds(58, TEST_LED_AMOUNT, @leds_test)
   change_colors()
 
 PUB change_colors()| i
