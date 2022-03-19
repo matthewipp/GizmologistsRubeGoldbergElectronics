@@ -2,7 +2,7 @@
 
 
 CON
-
+     _clkfreq = 180_000_000
 
 VAR
   long pin
@@ -16,9 +16,6 @@ PUB init_leds(pin_number, led_amount, led_data_loc, cog_num)
   amount := led_amount
   data_loc := led_data_loc
   cog_number := cog_num
-  debug("Hello")
-  PINSTART(pin_number, 1, 0, 0)
-  PINLOW(pin_number)
   reset_leds()
   return
 
@@ -28,7 +25,7 @@ PUB reset_leds() | leds, i
     data_loc[i] := 0
   data_loc[amount-1] := $FF000000
   debug("Starting Reset")
-  COGINIT(7, @init_led_pins, @pin)
+  COGINIT(7, @write_to_leds, @pin)
   debug("Reset")
 
 PUB set_rgb(index, red, green, blue) | value
@@ -41,38 +38,45 @@ DAT
 
 DAT     ORG
 
-init_led_pins           DIRH    ptra                    'Set direction of pin high
-                        OUTL    ptra                    'Set pin output low
-                        RET
+test_led_pins           RDLONG  pb, ptra                'Read LED Pin Number
+                        DIRH    #22
+                        OUTH    #22                      'Set pin output high
+                        JMP     @test_led_pins
+                        COGSTOP #7
 
                                                         ''pa -> value of data loc
                                                         ''pb -> pin number
                                                         ''ptra -> address of pin number, then bit counter
                                                         ''ptrb -> data_loc
 write_to_leds           RDLONG  pb, ptra                'Load pin number into ptra
+                        DIRH    pb                      'Set pin direction high
+                        OUTL    pb                      'Initialize to low
                         ADD     ptra, #8                'Add two longs to pin number location
                         RDLONG  ptrb, ptra              'Move array pointer to ptrb
 write_next              RDLONG  pa, ptrb                'Reads value of data loc to pa
                         MOV     ptra, #24               'Init counter to 24
-                        ROL     ptra, #8                'Rotate left eight times to align MSB
-write_bit               ROL     pa, #1                'Rotate left once to get next bit
-                        TEST    pa, #1                'See if last bit is 1
+                        ROL     pa, #8                  'Rotate left eight times to align MSB
+write_bit               ROL     pa, #1                  'Rotate left once to get next bit
+                        TEST    pa, #1                  'See if last bit is 1
                         OUTH    pb                      'Set pin high
-              IF_Z      WAITX   zero_wait               'Wait short time if bit is zero
-              IF_NZ     WAITX   one_wait                'Wait long tim if bit is one
+              IF_Z      WAITX   one_second              'Wait short time if bit is zero
+              IF_NZ     WAITX   one_second              'Wait long tim if bit is one
                         OUTL    pb                      'Set pin low
               IF_Z      WAITX   zero_wait2              'Wait long time if pin is zero
               IF_NZ     WAITX   one_wait2               'Wait short time if pin is one
                         DJZ     ptra, @test_if_last     'Decrement counter and jump to next led if 0
-                        JMP     @write_bit
+                        JMP     @end_write
 
 test_if_last            AND     pa, ff_constant       'And value with 0xFF000000 bit mask
                         TJNZ    pa, @end_write        'End method if first 8 bits not 0
                         ADD     ptrb, #4
+                        debug("Writing next")
                         JMP     @write_next
 
 end_write               WAITX   reset_wait
-                        RET
+                        debug("Stopping cog")
+infinite_loop           NOP
+                        JMP     @infinite_loop
 
 save_rgb_value          WRLONG  pa, pb
 
@@ -83,7 +87,5 @@ zero_wait     long      70
 zero_wait2    long      151
 one_wait      long      142
 one_wait2     long      79
-long_zero_wait          long    45_000_000
-long_one_wait           long    180_000_000
 reset_wait    long      9000
-one_second    long      180_000_000
+one_second    long      90_000_000
