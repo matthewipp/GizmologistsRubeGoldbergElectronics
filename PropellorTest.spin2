@@ -15,9 +15,11 @@ OBJ
     leds          : "WS2812BLedObject"
 
 
-PUB start_test()
-  'test_ws2812b_leds()
-  coginit(16, @start_loop)
+PUB start_test() | led_wait_spin
+  debug("hi")
+  test_ws2812b_leds()
+  COGINIT(7, @start_loop, 56)
+
 
 PUB test_stepmotor()
   stepper_motor.init_stepperMotor(16, 17, 4, 1, 0)
@@ -26,8 +28,8 @@ PUB test_stepmotor()
     stepper_motor.step_amount(200, 10000, 0)
 
 PUB test_ws2812b_leds()
-  leds.init_leds(58, TEST_LED_AMOUNT, @leds_test)
-  change_colors()
+  leds.init_leds(58, TEST_LED_AMOUNT, @leds_test, 7)
+  'change_colors()
 
 PUB change_colors()| i
   red := 0
@@ -41,13 +43,18 @@ PUB change_colors()| i
       green := green + 1
       blue := blue + 1
 
+
+
 DAT    ORG
-start_loop    DIRH      #17
-loop          OUTH      #17
-              WAITX     .led_wait
-              OUTL      #17
-              WAITX     .led_wait
-              JMP       @loop
+start_loop    DIRH      ptra
+loop          OUTH      ptra
+              WAITX     led_wait
+              OUTL      ptra
+              WAITX     led_wait
+end_loop      JMP       @loop
+
 DAT
-.led_wait     long      90_000_000
+
+led_wait      long      90_000_000
 leds_test     long      0[TEST_LED_AMOUNT]
+loop_chunk    long      start_loop, end_loop-start_loop-1
