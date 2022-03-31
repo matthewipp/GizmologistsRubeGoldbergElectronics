@@ -48,9 +48,9 @@ PUB set_rgb(index, red, green, blue) | value
 
 DAT     ORG
                                                         ''pa -> value of current data loc
-                                                        ''pb ->
+                                                        ''pb -> pin number
                                                         ''ptra -> address of ff_constant, then bit counter
-                                                        ''ptrb ->
+                                                        ''ptrb -> value of LED encoding
                                                         ''$001 -> ff_constant
                                                         ''$002 -> zero_wait
                                                         ''$003 -> zero_wait2
@@ -63,22 +63,27 @@ DAT     ORG
                                                         ''$00A -> data_loc
                                                         ''$00B -> cog_num
 write_to_leds           SETQ    #NUM_VARIABLES-1        'Load variables from last cog into new one
-                        RDLONG  $001, ptra
+                        RDLONG  $001, ptra              '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                         MOV     pa, $00A                'Move starting data loc to pa
-                        DIRH    $008                    'Init pin direction
-                        OUTL    $008                    'Init pin to low
+                        MOV     pb, $008                'Move pin number to pb
+                        DIRH    pb                      'Init pin direction
+                        OUTL    pb                      'Init pin to low
 
-write_next              RDLONG  pa, ptrb                'Reads value of data loc to pa
+write_next              RDLONG  ptrb, pa                'Reads value of data loc to pa
                         MOV     ptra, #24               'Init counter to 24
-                        ROL     pa, #8                  'Rotate left eight times to align MSB
-write_bit               ROL     pa, #1                  'Rotate left once to get next bit
-                        TEST    pa, #1 WZ               'Test if last bit is 1
+                        ROL     ptrb, #8                'Rotate left eight times to align MSB
+write_bit               ROL     ptrb, #1                'Rotate left once to get next bit
+                        TEST    ptrb, #1 WZ             'Test if last bit is 1
                         OUTH    pb                      'Set pin high
               IF_Z      WAITX   $002                    'Wait short time if bit is 0
               IF_NZ     WAITX   $004                    'Wait long time if bit is 1
                         OUTL    pb                      'SET pin low
               IF_Z      WAITX   $003                    'Wait long time if bit is 0
               IF_NZ     WAITX   $005                    'Wait short time if bit is 1
+                        DJNZ    ptra, @write_bit WZ     'Decrement Bit counter, jump to write_bit if not 0
+next_led                DJNZ    $009, @write_next WZ    'Decrement amount counter, jump to write_next if not zero
+infinit_loop            NOP                             'Do nothing, just maintain values in cog
+                        JMP     @infinite_loop          'Infinit loop
 
 
                         debug(UDEC(pa))
