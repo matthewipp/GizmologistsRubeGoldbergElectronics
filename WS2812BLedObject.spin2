@@ -2,20 +2,36 @@
 
 
 CON
-     _clkfreq = 180_000_000
+  _clkfreq = 180_000_000
+  NUM_VARIABLES = 11
 
 VAR
+  long ff_constant    '$FF000000
+  long zero_wait      '70
+  long zero_wait2     '151
+  long one_wait       '142
+  long one_wait2      '79
+  long reset_wait     '9000
+  long one_second     '180_000_000
   long pin
   long amount
   long data_loc
-  long cog_number
+  long cog_num
 
 ' Initializes led_amount pins on pin pin_number
-PUB init_leds(pin_number, led_amount, led_data_loc, cog_num)
+PUB init_leds(pin_number, led_amount, led_data_loc, cog_number)
+  ff_constant := $FF000000
+  zero_wait := 70
+  zero_wait2 := 151
+  one_wait := 142
+  one_wait2 := 79
+  one_second := 180_000_000
+  reset_wait := 9000
   pin := pin_number
   amount := led_amount
   data_loc := led_data_loc
-  cog_number := cog_num
+  cog_num := cog_number
+  debug(UDEC(cog_number))
   reset_leds()
   return
 
@@ -24,68 +40,45 @@ PUB reset_leds() | leds, i
   repeat i from 0 to amount-1
     data_loc[i] := 0
   data_loc[amount-1] := $FF000000
-  debug("Starting Reset")
-  COGINIT(7, @write_to_leds, @pin)
-  debug("Reset")
+  COGINIT(cog_num, @write_to_leds, @ff_constant)
 
 PUB set_rgb(index, red, green, blue) | value
-  value := long[data_loc + 4*index]
-  value := (value & $FF000000) | (green << 16) | (red << 8) | blue
+  long[data_loc + 4*index] := (value & $FF000000) | (green << 16) | (red << 8) | blue
   return
 
-DAT
-
-
 DAT     ORG
+                                                        ''pa -> value of current data loc
+                                                        ''pb ->
+                                                        ''ptra -> address of ff_constant, then bit counter
+                                                        ''ptrb ->
+                                                        ''$001 -> ff_constant
+                                                        ''$002 -> zero_wait
+                                                        ''$003 -> zero_wait2
+                                                        ''$004 -> one_wait
+                                                        ''$005 -> one_wait2
+                                                        ''$006 -> reset_wait
+                                                        ''$007 -> one_second
+                                                        ''$008 -> pin_number
+                                                        ''$009 -> amount
+                                                        ''$00A -> data_loc
+                                                        ''$00B -> cog_num
+write_to_leds           SETQ    #NUM_VARIABLES-1        'Load variables from last cog into new one
+                        RDLONG  $001, ptra
+                        MOV     pa, $00A                'Move starting data loc to pa
+                        DIRH    $008                    'Init pin direction
+                        OUTL    $008                    'Init pin to low
 
-test_led_pins           RDLONG  pb, ptra                'Read LED Pin Number
-                        DIRH    #22
-                        OUTH    #22                      'Set pin output high
-                        JMP     @test_led_pins
-                        COGSTOP #7
-
-                                                        ''pa -> value of data loc
-                                                        ''pb -> pin number
-                                                        ''ptra -> address of pin number, then bit counter
-                                                        ''ptrb -> data_loc
-write_to_leds           RDLONG  pb, ptra                'Load pin number into ptra
-                        DIRH    pb                      'Set pin direction high
-                        OUTL    pb                      'Initialize to low
-                        ADD     ptra, #8                'Add two longs to pin number location
-                        RDLONG  ptrb, ptra              'Move array pointer to ptrb
 write_next              RDLONG  pa, ptrb                'Reads value of data loc to pa
                         MOV     ptra, #24               'Init counter to 24
                         ROL     pa, #8                  'Rotate left eight times to align MSB
 write_bit               ROL     pa, #1                  'Rotate left once to get next bit
-                        TEST    pa, #1                  'See if last bit is 1
+                        TEST    pa, #1 WZ               'Test if last bit is 1
                         OUTH    pb                      'Set pin high
-              IF_Z      WAITX   one_second              'Wait short time if bit is zero
-              IF_NZ     WAITX   one_second              'Wait long tim if bit is one
-                        OUTL    pb                      'Set pin low
-              IF_Z      WAITX   zero_wait2              'Wait long time if pin is zero
-              IF_NZ     WAITX   one_wait2               'Wait short time if pin is one
-                        DJZ     ptra, @test_if_last     'Decrement counter and jump to next led if 0
-                        JMP     @end_write
-
-test_if_last            AND     pa, ff_constant       'And value with 0xFF000000 bit mask
-                        TJNZ    pa, @end_write        'End method if first 8 bits not 0
-                        ADD     ptrb, #4
-                        debug("Writing next")
-                        JMP     @write_next
-
-end_write               WAITX   reset_wait
-                        debug("Stopping cog")
-infinite_loop           NOP
-                        JMP     @infinite_loop
-
-save_rgb_value          WRLONG  pa, pb
+              IF_Z      WAITX   $002                    'Wait short time if bit is 0
+              IF_NZ     WAITX   $004                    'Wait long time if bit is 1
+                        OUTL    pb                      'SET pin low
+              IF_Z      WAITX   $003                    'Wait long time if bit is 0
+              IF_NZ     WAITX   $005                    'Wait short time if bit is 1
 
 
-ff_constant   long      4278190080
-'All wait times account for extra 2 cycles of WAITX
-zero_wait     long      70
-zero_wait2    long      151
-one_wait      long      142
-one_wait2     long      79
-reset_wait    long      9000
-one_second    long      90_000_000
+                        debug(UDEC(pa))
