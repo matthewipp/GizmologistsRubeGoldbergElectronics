@@ -3,16 +3,16 @@
 
 CON
   _clkfreq = 180_000_000
-  NUM_VARIABLES = 11
+  NUM_VARIABLES = 4
 
 VAR
-  long ff_constant    '$FF000000
-  long zero_wait      '70
-  long zero_wait2     '151
-  long one_wait       '142
-  long one_wait2      '79
-  long reset_wait     '9000
-  long one_second     '180_000_000
+  'long ff_constant    '$FF000000
+  'long zero_wait      '70
+  'long zero_wait2     '151
+  'long one_wait       '142
+  'long one_wait2      '79
+  'long reset_wait     '9000
+  'long one_second     '180_000_000
   long pin
   long amount
   long data_loc
@@ -20,70 +20,68 @@ VAR
 
 ' Initializes led_amount pins on pin pin_number
 PUB init_leds(pin_number, led_amount, led_data_loc, cog_number)
-  ff_constant := $FF000000
-  zero_wait := 70
-  zero_wait2 := 151
-  one_wait := 142
-  one_wait2 := 79
-  one_second := 180_000_000
-  reset_wait := 9000
   pin := pin_number
   amount := led_amount
   data_loc := led_data_loc
   cog_num := cog_number
-  debug(UDEC(cog_number))
   reset_leds()
   return
 
 ' Resets the leds on this pin
-PUB reset_leds() | leds, i
+PUB reset_leds() | i
   repeat i from 0 to amount-1
     data_loc[i] := 0
-  data_loc[amount-1] := $FF000000
-  COGINIT(cog_num, @write_to_leds, @ff_constant)
+  COGINIT(7, @write_to_leds, @pin)
 
 PUB set_rgb(index, red, green, blue) | value
-  long[data_loc + 4*index] := (value & $FF000000) | (green << 16) | (red << 8) | blue
+  long[data_loc][index] := (green << 16) | (red << 8) | blue
   return
+
+PUB show()
+      debug(UDEC(long[data_loc][0]))
+      debug(UDEC(long[data_loc][1]))
+      debug(UDEC(long[data_loc][2]))
+      debug(UDEC(long[data_loc][3]))
+      debug(UDEC(long[data_loc][4]))
+  COGINIT(7, @write_to_leds, @pin)
 
 DAT     ORG
                                                         ''pa -> value of current data loc
                                                         ''pb -> pin number
                                                         ''ptra -> address of ff_constant, then bit counter
                                                         ''ptrb -> value of LED encoding
-                                                        ''$001 -> ff_constant
-                                                        ''$002 -> zero_wait
-                                                        ''$003 -> zero_wait2
-                                                        ''$004 -> one_wait
-                                                        ''$005 -> one_wait2
-                                                        ''$006 -> reset_wait
-                                                        ''$007 -> one_second
-                                                        ''$008 -> pin_number
-                                                        ''$009 -> amount
-                                                        ''$00A -> data_loc
-                                                        ''$00B -> cog_num
-write_to_leds           SETQ    #NUM_VARIABLES-1        'Load variables from last cog into new one
-                        RDLONG  $001, ptra              '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                        MOV     pa, $00A                'Move starting data loc to pa
-                        MOV     pb, $008                'Move pin number to pb
+write_to_leds           SETQ    #NUM_VARIABLES-1         'Read Variables from memory
+                        RDLONG  pin_number_var, ptra    '^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        MOV     pa, data_loc_var        'Move starting data loc to pa
+                        MOV     pb, pin_number_var      'Move pin number to pb
                         DIRH    pb                      'Init pin direction
                         OUTL    pb                      'Init pin to low
-
 write_next              RDLONG  ptrb, pa                'Reads value of data loc to pa
                         MOV     ptra, #24               'Init counter to 24
                         ROL     ptrb, #8                'Rotate left eight times to align MSB
 write_bit               ROL     ptrb, #1                'Rotate left once to get next bit
                         TEST    ptrb, #1 WZ             'Test if last bit is 1
                         OUTH    pb                      'Set pin high
-              IF_Z      WAITX   $002                    'Wait short time if bit is 0
-              IF_NZ     WAITX   $004                    'Wait long time if bit is 1
+              IF_Z      WAITX   zero_wait_var           'Wait short time if bit is 0
+              IF_NZ     WAITX   one_wait_var            'Wait long time if bit is 1
                         OUTL    pb                      'SET pin low
-              IF_Z      WAITX   $003                    'Wait long time if bit is 0
-              IF_NZ     WAITX   $005                    'Wait short time if bit is 1
-                        DJNZ    ptra, @write_bit WZ     'Decrement Bit counter, jump to write_bit if not 0
-next_led                DJNZ    $009, @write_next WZ    'Decrement amount counter, jump to write_next if not zero
-infinit_loop            NOP                             'Do nothing, just maintain values in cog
-                        JMP     @infinite_loop          'Infinit loop
+              IF_Z      WAITX   zero_wait2_var          'Wait long time if bit is 0
+              IF_NZ     WAITX   one_wait2_var           'Wait short time if bit is 1
+                        DJNZ    ptra, #write_bit        'Decrement bit counter, write next bit if not 0
+                        ADD     pa, #4
+                        DJNZ    amount_var, #write_next
+                        WAITX   reset_wait_var
+infinite_loop           NOP                             'Do nothing, just maintain values in cog
+                        JMP     #infinite_loop          'Infinite loop
 
-
-                        debug(UDEC(pa))
+ff_constant_var         long    $FF000000
+zero_wait_var           long    70
+zero_wait2_var          long    151
+one_wait_var            long    142
+one_wait2_var           long    79
+reset_wait_var          long    9000
+one_second_var          long    180_000_000
+pin_number_var          long    0
+amount_var              long    0
+data_loc_var            long    0
+cog_num_var             long    0

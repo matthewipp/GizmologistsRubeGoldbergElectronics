@@ -25,8 +25,18 @@ PUB test_stepmotor()
     stepper_motor.step_amount(200, 10000, 1)
     stepper_motor.step_amount(200, 10000, 0)
 
-PUB test_ws2812b_leds()
-  leds.init_leds(22, TEST_LED_AMOUNT, @leds_test, 2)
+PUB test_ws2812b_leds() | i, j
+  leds.init_leds(22, TEST_LED_AMOUNT, @leds_test, 7)
+  WAITMS(1000)
+  repeat
+    repeat i from 0 to 4
+      repeat j from 0 to 4
+        leds.set_rgb(j, 0, 0, 0)
+      leds.set_rgb(i, 255, 0, 255)
+      leds.show()
+      WAITMS(1000)
+
+
   'change_colors()
 
 PUB change_colors()| i
